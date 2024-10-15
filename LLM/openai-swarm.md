@@ -90,10 +90,10 @@ while True:
 ```
 
 ### 问
-1. 怎么从大模型返回的内容中判断是要执行一个函数, 还是要执行一个agent呢?
+1. 怎么从大模型返回的内容中判断是要执行一个函数, 还是要执行一个agent呢?  
 其实对于大模型来说, 都是一个个的tool. 在大模型判断需要调用function的时候, 都会返回function call(一个json, 描述了要调用的函数的名字+函数的参数). 从中可以解析出function的名字, 拿到tool_map然后调用function, 然后判断函数返回的类型其实就行了. 返回的是Agent类型的, 那么代表下面应该交接给另一个agent进行处理
 
-2. messages/chat_history/对话上下文是怎么在多个agent之间流转的?
+2. messages/chat_history/对话上下文是怎么在多个agent之间流转的?  
 - 计算刚开始history的长度
 - 不管当前agent返回了function_call或者纯文本, 那么都放到history最后
 - function_call返回的消息, 也继续放到到history最后
@@ -101,19 +101,19 @@ while True:
 - history数组中最后一个content就是整个调用链路的最终返回
 - 所以每一轮(while开启新的循环), 如果调用一个新的agent, 传进行的history都会包含与前面n个agent交互的所有上下文
 
-3. tool如果想要修改上下文, 或者返回其他的内容怎么办?
+3. tool如果想要修改上下文, 或者返回其他的内容怎么办?  
 一个函数返回的Result结构体中, 可以返回context_variables, tool返回的context_variables会被更新到一个顶部声明好的context_variables字典中. 而顶部声明好的context_variables会被包装到本次执行结果中一起返回.
 
-4. 这个框架有什么新东西, 有什么不同?
+4. 这个框架有什么新东西, 有什么不同?  
 将tool_call返回的内容进行扩展, 不仅仅限制于返回字符串, 返回各种外界交互的结果. 还可以返回一个agent, 这样配置将tool的名字改成`transfer_to_xxx`, 配置将instructions中添加说明`任务说明(意图分发说明)+意图分支+追问+约束`. 这样就实现了在满足xx条件的时候, 调用`transfer_to_xx`返回一个agent, 然后继续调用这个agent, 直到返回的不是function_call
 
-5. 测试类怎么写的?
+5. 测试类怎么写的?  
 - 用好run_demo_loop
 
-6. 如果tool想要接受context_var要怎么办?
+6. 如果tool想要接受context_var要怎么办?  
 tool可以声明context_var的参数, 然后代码中会通过`func.__code__.co_varnames`来判断是否有声明需要context_var的参数. 如果有的话, 把从顶部一路透传的context_var赋值给对应的参数, 这样调用tool就会正确拿到上下文参数
 
-7. 整个项目的结构?
+7. 整个项目的结构?  
 整个项目非常简单, 就一个核心的core类, 其他的都是一些utils
 ### reference: 
 [Orchestrating Agents: Routines and Handoffs, 其实这篇文章里已经说的很清楚了](https://cookbook.openai.com/examples/orchestrating_agents)
