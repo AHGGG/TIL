@@ -8,3 +8,4 @@
 
 ### LLM
 - [openai-swarm](LLM/openai-swarm.md)
+- [crewAI](LLM/crewAI.md)
