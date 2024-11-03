@@ -61,6 +61,12 @@ Only output the Python list, no explanations needed.
 ### context retrieval
 通过预处理的时候，将一些描述信息向量化到vector db中。然后这里就拿着提取出来的关键词去里面查询最相似的哪些描述信息。
 
+> 预处理的时候使用到了局部敏感哈希（Locality Sensitive Hashing, LSH）的技术，用来检索数据库中与关键字最相似的值。预处理的时候拿到db中不一样的值建立索引。
+
+> 局部敏感哈希（Locality Sensitive Hashing, LSH）是一种算法，用于将相似的对象映射到相同或相似的哈希桶中，从而使得在高维空间中进行相似性搜索更加高效。LSH的关键思想是设计哈希函数，使得相似的输入（如相似的向量或集合）以高概率被哈希到相同的桶中，而不相似的输入则以低概率被哈希到同一桶中 ---- chatgpt
+> 内部实现用到了MinHash（处理大规模数据集的相似性查询）
+
+
 ### column filtering
 遍历每个table的每个column信息，拿着每个column的信息，调用llm，输出一个is_column_information_relevant，为Yes/No
 

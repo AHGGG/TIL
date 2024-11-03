@@ -20,6 +20,7 @@
 
 
 #### text-to-sql
+- [text-to-sql](LLM/text-to-sql/text-to-sql.md)
 - [CHESS | paper](LLM/text-to-sql/CHESS.md)
 - [E-SQL | paper](LLM/text-to-sql/E-SQL.md)
 - [CHASE-SQL | paper](LLM/text-to-sql/CHASE-SQL.md)
