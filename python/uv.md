@@ -11,3 +11,13 @@ uv venv: 在当前目录创建一个虚拟环境
 
 uv pip sync ./requirement.txt: 基于一个requirement依赖文件安装依赖
 - 太快了！！！爽
+
+### pipfile转uv
+uv venv
+
+uvx pdm import pyproject.toml -f pipfile
+
+uv lock 
+
+uv sync
+> [memory-agent使用的pipfile](https://github.com/langchain-ai/memory-agent)
