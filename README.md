@@ -34,3 +34,7 @@
 
 ### books
 - [待整理: The Pragmatic Programmer Your Journey to Mastery](book/The-Pragmatic-Programmer-Your-Journey-to-Mastery.md)
+
+### articles
+- [HTML head 中添加 <script type="application/ld+json"\>, 给网站补充更多元数据](https://csvbase.com/blog/13)
+- [基础概念perceptron介绍](https://medium.com/@vincentlambert0/it-all-started-with-a-perceptron-86bd0fb80b96)
