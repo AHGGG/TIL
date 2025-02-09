@@ -9,6 +9,9 @@
     - [python](#python)
     - [books](#books)
 
+### Blog
+- [Fuck-You-Show-Me-The-Prompt（绕过项目和框架，直接拦截LLM接口）](blog/Fuck-You-Show-Me-The-Prompt.md)
+
 ### LLM
 - [openai-swarm | agent](LLM/openai-swarm.md)
 - [crewAI | agent](LLM/crewAI.md)
@@ -34,6 +37,8 @@
 
 ### books
 - [待整理: The Pragmatic Programmer Your Journey to Mastery](book/The-Pragmatic-Programmer-Your-Journey-to-Mastery.md)
+- [待整理: 原则]()
+- [待整理: 小岛经济学]()
 
 ### articles
 - [HTML head 中添加 <script type="application/ld+json"\>, 给网站补充更多元数据](https://csvbase.com/blog/13)
