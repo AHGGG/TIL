@@ -3,14 +3,17 @@
 > Today I Learned
 
 - [TIL](#til)
+    - [Blog](#blog)
     - [LLM](#llm)
       - [text-to-sql](#text-to-sql)
       - [prompt](#prompt)
     - [python](#python)
     - [books](#books)
+    - [articles](#articles)
 
 ### Blog
 - [Fuck-You-Show-Me-The-Prompt（绕过项目和框架，直接拦截LLM接口）](blog/Fuck-You-Show-Me-The-Prompt.md)
+- [与Cline的结对编程体验之-思维转变](blog/与Cline的结对编程体验1-思维转变.md)
 
 ### LLM
 - [openai-swarm | agent](LLM/openai-swarm.md)
