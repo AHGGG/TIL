@@ -5,6 +5,7 @@
 - [TIL](#til)
     - [Blog](#blog)
     - [LLM](#llm)
+      - [原理](#原理)
       - [text-to-sql](#text-to-sql)
       - [prompt](#prompt)
     - [python](#python)
@@ -24,6 +25,8 @@
 - [待看: https://github.com/gabrielchua/open-notebooklm](LLM/open-notebooklm.md)
 - [待看: https://github.com/meta-llama/llama-recipes/tree/main/recipes/quickstart/NotebookLlama](LLM/NotebookLlama.md)
 
+#### 原理
+- [QKV初步理解](LLM/human-to-hero/QKV初步理解.md)
 
 #### text-to-sql
 - [text-to-sql](LLM/text-to-sql/text-to-sql.md)
