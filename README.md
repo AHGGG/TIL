@@ -28,6 +28,7 @@
 #### 原理
 - [QKV初步理解](LLM/human-to-hero/QKV初步理解.md)
 - [transformer最后输出逻辑.md](LLM/human-to-hero/transformer最后输出逻辑.md)
+- [手写transformer-api梳理(30%)](LLM/human-to-hero/手写transformer-api梳理.ipynb)
 
 #### text-to-sql
 - [text-to-sql](LLM/text-to-sql/text-to-sql.md)
