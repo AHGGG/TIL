@@ -8,6 +8,7 @@
       - [原理](#原理)
       - [text-to-sql](#text-to-sql)
       - [prompt](#prompt)
+    - [linux](#linux)
     - [python](#python)
     - [books](#books)
     - [articles](#articles)
@@ -39,6 +40,8 @@
 #### prompt
 - [step-back prompting | paper](LLM/step-back-prompting.md)
 
+### linux
+- [SyncClipboard折腾](linux/SyncClipboard折腾.md)
 
 ### python
 - [uv | tool](python/uv.md)
