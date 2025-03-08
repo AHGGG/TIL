@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "jupyterlab>=4.3.5",
+    "matplotlib>=3.10.1",
     "numpy>=2.2.3",
 ]
