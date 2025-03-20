@@ -153,6 +153,9 @@ class TransformerLanguageModel(nn.Module):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # 第一个参数为embedding字典的大小，这里取+1是确保到时候max_token_id这个值能够从下标为0开始的数组中拿到值
+        # 第二个参数为embedding的维度，也就是我们一个字多少个维度，这里用d_model
+        self.token_embedding_lookup_table = nn.Embedding(max_token_id + 1, d_model)
         self.transformer_blocks = nn.ModuleList(
             [TransformerBlock() for _ in range(num_blocks)]
         )
@@ -163,11 +166,66 @@ class TransformerLanguageModel(nn.Module):
         """注意这里的入参不一样了
 
         Args:
-            idx: token代表的id数组输入
+            idx: token代表的id数组输入（有batch_size）, 这里已经已经tokenizer处理了
             targets: 预期输出，如果传了就是训练模式，可以根据这个target计算出loss
         """
-        # 1. embedding
+        # 注意，这里idx是[batch_size, idx_length]的维度！！！
+        B, idx_length = idx.shape
 
-        # 2. calc positional matrix
+        # from [batch_size, idx_length] to [batch_size, idx_length, d_model]
+        embedding_input = self.token_embedding_lookup_table(idx)
 
-        # TODO
+        # 1. calc positional matrix
+        # 1.1 先确定我们position encoding这个矩阵的大小，因为要和我们输入的维度一样，所以是：[idx_length, d_model]
+        # 1.1 进行初始化，因为位置编码信息是一样的常数，所以这里只需要计算一个batch的出来，其他的batch都直接相加就行
+        position_encoding_lookup_table = torch.zeros(idx_length, d_model)
+
+        # 1.2 计算位置编码matrix
+        # 从每一行的维度看，公式中的pos每次+1的递增。
+        # 从每一列的维度遍历，i的取值范围从[0, d_model / 2]也就是[0, 32], 一个i对应两个元素，第一个用sin，第二个用cos
+        for pos in range(idx_length):
+            for i in range(0, d_model, 2):
+                sin_index = i
+                cos_index = i + 1
+                position_encoding_lookup_table[pos][sin_index] = math.sin(
+                    pos / (math.pow(10000, 2 * i / d_model))
+                )
+                position_encoding_lookup_table[pos][cos_index] = math.cos(
+                    pos / (math.pow(10000, 2 * i / d_model))
+                )
+
+        # 1.2 optional
+        # 使用torch的api可以简化前面的计算，我感觉还是前面的好理解，不用受torch api的影响
+        # position = torch.arange(0, context_length, dtype=torch.float).unsqueeze(1)
+        # div_term = torch.exp(
+        #     torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)
+        # )
+        # result = torch.sin(position * div_term)
+        # position_encoding_lookup_table[:, 0::2] = torch.sin(position * div_term)
+        # position_encoding_lookup_table[:, 1::2] = torch.cos(position * div_term)
+
+        # 2. 将embeddin后的输入 + position encode后的结果 ==> 输入中就包含了位置信息
+        # 2.1 [batch_size, idx_length, d_model] + [idx_length, d_model]在torch中是可以相加的，结果的维度还是[batch_size, idx_length, d_model]
+        x = embedding_input + position_encoding_lookup_table
+
+        # 3. 经过transformer_blocks
+        x = self.transformer_blocks(x)
+
+        # 4. 经过最后的线性层, logits ==> [batch_size, idx_length, d_model]
+        logits = self.final_linear(x)
+
+        # 判断如果targets不为空，那么我们需要计算出loss
+        if targets:
+            # B: batch_size, T: timestamp, current context_length(idx_length) ==> 序列长度, C: Channels(dimensions） ==> 类别数量
+            B, T, C = logits.shape
+            # 交叉熵损失函数`F.cross_entropy(input=logits, target=targets_reshaped)`期望输入的形状是 (N, C) 和 (N)，其中 N 是样本数量，C 是类别数量。
+            # 我的理解: 为什么target里不需要考虑C(类别数), 因为target代表的意思就是预期的类别, 而我们的输入里放了C个类别的概率. 所以输入的每个序列里的某一个元素, 都有一个预期的类别, 这样target其实就相当于降维了.
+            # 将 logits 和 targets 重塑为 (B * T, C) 和 (B * T)
+            logits_reshaped = logits.view(B * T, C)  # 重塑为 (B * T, C)
+            # 其实targets可以理解成每个token都有一个预期的答案，但是这个在logits中是d_model个概率表示的（最大的就是计算出来的），所以targets里自然就缺少一个维度（dimension）
+            targets_reshaped = targets.view(B * T)   # 重塑为 (B * T)
+            loss = F.cross_entropy(logits_reshaped, targets_reshaped)
+        else:
+            loss = None
+
+        return logits, loss
