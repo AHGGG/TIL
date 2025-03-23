@@ -14,6 +14,9 @@ context_length = 16
 num_blocks = 8
 num_heads = 4
 dropout = 0.1
+learning_rate = 0.001  # 学习率
+max_iters = 200  # 训练的总次数
+temperature = 1.0
 
 
 def set_cuda():
@@ -52,8 +55,8 @@ val_data = tokenized_text[split_idx:]
 
 
 class FeedForward(nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.d_model = d_model
         self.ffn = nn.Sequential(
             nn.Linear(in_features=d_model, out_features=d_model * 4),
@@ -67,8 +70,8 @@ class FeedForward(nn.Module):
 
 
 class Attension(nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         # 因为这里是单个头，所以这里的Wq也是根据head的个数初始化部分就行
         self.Wq = nn.Linear(d_model, d_model // num_heads)
         self.Wk = nn.Linear(d_model, d_model // num_heads)
@@ -77,9 +80,10 @@ class Attension(nn.Module):
     def forward(self, x):
         # [batch_size, context_length, d_model] @ [batch_size, d_model, d_model // num_heads]
         # ==> [batch_size, context_length, d_model // num_heads]
-        Q = x @ self.Wq
-        K = x @ self.Wk
-        V = x @ self.Wv
+        # self.Wq 是 nn.Linear 层，不是一个 Tensor 或 nn.Parameter, 所以需要像函数一样调用
+        Q = self.Wq(x)  # x @ self.Wq
+        K = self.Wk(x)  # x @ self.Wk
+        V = self.Wv(x)  # x @ self.Wv
 
         # [batch_size, context_length, d_model // num_heads] @ [batch_size, d_model // num_heads, context_length]
         # ==> [batch_size, context_length, context_length]
@@ -119,14 +123,14 @@ class MultiAttension(nn.Module):
         # [batch_size, context_length, d_model] @ [batch_size, d_model, d_model]
         # ==> [batch_size, context_length, d_model]
         # ==> 维持和我们输入一样的维度了！
-        return A @ self.Wo
+        return self.Wo(A)  # A @ self.Wo
 
 
 class TransformerBlock(nn.Module):
     """这里是单个Transformer Block的逻辑，这样的Block一共会有 num_blocks 个"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.multi_head_attention = MultiAttension()
         self.feed_forward = FeedForward()
         self.layer_norm_1 = nn.LayerNorm(d_model)
@@ -151,13 +155,14 @@ class TransformerBlock(nn.Module):
 class TransformerLanguageModel(nn.Module):
     """最终的多层Transformer"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         # 第一个参数为embedding字典的大小，这里取+1是确保到时候max_token_id这个值能够从下标为0开始的数组中拿到值
         # 第二个参数为embedding的维度，也就是我们一个字多少个维度，这里用d_model
         self.token_embedding_lookup_table = nn.Embedding(max_token_id + 1, d_model)
-        self.transformer_blocks = nn.ModuleList(
-            [TransformerBlock() for _ in range(num_blocks)]
+        # 注意这里的是nn.Sequential, 而不是nn.ModuleList
+        self.transformer_blocks = nn.Sequential(
+            *[TransformerBlock() for _ in range(num_blocks)]
         )
         # 最后将[batch_size, context_length, d_model] 转为 [batch_size, context_length, vocab_size]的矩阵
         self.final_linear = nn.Linear(d_model, max_token_id + 1)
@@ -211,7 +216,7 @@ class TransformerLanguageModel(nn.Module):
         # 3. 经过transformer_blocks
         x = self.transformer_blocks(x)
 
-        # 4. 经过最后的线性层, logits ==> [batch_size, idx_length, d_model]
+        # 4. 经过最后的线性层, logits ==> [batch_size, idx_length, vocab_size]
         logits = self.final_linear(x)
 
         # 判断如果targets不为空，那么我们需要计算出loss
@@ -229,3 +234,74 @@ class TransformerLanguageModel(nn.Module):
             loss = None
 
         return logits, loss
+
+    def generate(self, idx, max_new_token: int):
+        """forward用于训练, 这个generate方法用于生成
+        
+        Args:
+            idx: 这里是输入的文本, 转成token后的数组, 文本可能非常长
+            max_new_token: 要补全多少个token
+        """
+        # idx ==> [batch_size, idx_length]
+        for _ in range(max_new_token):
+            # 第一个维度不管, 第二个维度按照上下文窗口取出对应长度的文本
+            idx_ = idx[:, -context_length:]
+            # logits: [batch_size, context_length, vocab_size]
+            logits, loss = self(idx_)
+            # 第一个维度批次不管, 拿到第二个维度context_length中的最后一个token对应的向量 [batch_size, vocab_size]
+            last_token_logits = logits[:, -1, :]
+            # 拿到logits后再经过一个softmax转为概率, dim=-1的意思是将vocab_size维度进行归一化, 得到概率分布 [batch_size, vocab_size]
+            probs = F.softmax(last_token_logits / temperature, dim=-1)
+
+            # 这里没有使用argmax来拿概率最大的, 而是使用多项分布采样, 也就是说可能从概率最高的几个中进行选择
+            # 这样配合 temperature, 来控制生成token的随机性
+            # 例如 temperature 为1的时候, probs不受影响
+            # 如果 temperature 为2的时候, 前面的在softmax前的logits / temperature, 这样大的值在softmax后, 原本和另一个token之间的概率差会很大, 这个时候经过前面的除法之后再softmax, 相差就不会像temperature为1的时候那么大, 那么另一个token就有可能被选到, 所以随机性增加了
+            # 如果 temperature 为0.1的时候, 代表原本就很大的值在softmax之后, 占用的概率会更大, 这样就是大概率选择高概率的token, 实现更稳定的输出
+            idx_next = torch.multinomial(input=probs, num_samples=1)  # [batch_size, 1]
+
+            # 这个时候根据logits中最后一个token预测的概率分布, 找到最大的值所在vocab_size的下标, 也就是某个token在词汇表中的编码值
+            # 通过vocab_dict[token_id]就找到了对应的token真正的样子. 代码就是encoder.decode([token_id])
+            # 前面已经预测出了一个token_id, 这个时候需要拼接到前面的idx中, 继续补全, 直到达到max_new_token个数
+            # 这里idx_next要插入到idx的第一个维度, idx是[batch_size, idx_length]
+            idx = torch.cat((idx, idx_next), dim=1)
+        return idx
+
+
+def get_batch_x_y(data_set: str):
+    data = train_data if data_set == "train" else val_data
+    # 生成一个随机的下标, 注意这里size是元组, 代表我们每个批次选一个开始下标
+    idxs = torch.randint(low=0, high=len(tokenized_text) - context_length, size=(batch_size,))
+    # 这样就可以继续从tokenized_texta中取出对应批次的数据, x_batch是输入, y_batch是预期输出
+    x_batch = torch.stack([tokenized_text[idx:idx + context_length] for idx in idxs])
+    y_batch = torch.stack([tokenized_text[idx + 1:idx + context_length + 1] for idx in idxs])
+    return x_batch, y_batch
+
+
+model = TransformerLanguageModel()
+
+# 论文中使用的optimizer是Adam, 关于Adam\AdamW可以看论文: https://arxiv.org/pdf/1711.05101
+optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
+for step in range(max_iters):
+    x, y = get_batch_x_y("train")
+    logits, loss = model(x, y)
+    # 每次backward计算梯度都会放到.grad中, 如果不清空, 本次计算的梯度会加到上一次的梯度中. 所以这里是清空 param.grad，为训练做准备
+    optimizer.zero_grad(set_to_none=True)
+    # 计算梯度，并将其存储在 param.grad 里
+    loss.backward()
+    # 让优化器根据 param.grad 的值更新参数
+    optimizer.step()
+
+torch.save(model.state_dict(), "model.pt")
+
+
+model.eval()
+start = "The salesperson"
+start_idx = encoding.encode(start)
+# [None, ...]的意思是将start_idx的维度从[idx_length] 变到 [1, idx_length], 添加上batch_size为1的维度
+x = torch.tensor(start_idx, dtype=torch.long)[None, ...]
+# out的维度是: [batch_size, idx_length + max_new_token]
+out = model.generate(x, 1)
+
+# out[0]代表取第一个batch
+print(encoding.decode(out[0].tolist()))
