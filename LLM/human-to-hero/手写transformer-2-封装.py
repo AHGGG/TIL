@@ -15,7 +15,7 @@ num_blocks = 8
 num_heads = 4
 dropout = 0.1
 learning_rate = 0.001  # 学习率
-max_iters = 200  # 训练的总次数
+max_iters = 2000  # 训练的总次数
 temperature = 1.0
 
 
@@ -99,7 +99,7 @@ class Attension(nn.Module):
         attention_score = attention_score.masked_fill(mask, -float("inf"))
 
         # softmax, [batch_size, context_length, context_length]
-        attention_score = F.softmax(attention_score)
+        attention_score = F.softmax(attention_score, dim=-1)
 
         # [batch_size, context_length, context_length] @ batch_size, context_length, d_model // num_heads]
         # ==> [batch_size, context_length, d_model // num_heads]
@@ -220,7 +220,7 @@ class TransformerLanguageModel(nn.Module):
         logits = self.final_linear(x)
 
         # 判断如果targets不为空，那么我们需要计算出loss
-        if targets:
+        if targets is not None:
             # B: batch_size, T: timestamp, current context_length(idx_length) ==> 序列长度, C: Channels(dimensions） ==> 类别数量
             B, T, C = logits.shape
             # 交叉熵损失函数`F.cross_entropy(input=logits, target=targets_reshaped)`期望输入的形状是 (N, C) 和 (N)，其中 N 是样本数量，C 是类别数量。
@@ -251,7 +251,7 @@ class TransformerLanguageModel(nn.Module):
             # 第一个维度批次不管, 拿到第二个维度context_length中的最后一个token对应的向量 [batch_size, vocab_size]
             last_token_logits = logits[:, -1, :]
             # 拿到logits后再经过一个softmax转为概率, dim=-1的意思是将vocab_size维度进行归一化, 得到概率分布 [batch_size, vocab_size]
-            probs = F.softmax(last_token_logits / temperature, dim=-1)
+            probs = F.softmax(input=last_token_logits / temperature, dim=-1)
 
             # 这里没有使用argmax来拿概率最大的, 而是使用多项分布采样, 也就是说可能从概率最高的几个中进行选择
             # 这样配合 temperature, 来控制生成token的随机性
@@ -280,6 +280,8 @@ def get_batch_x_y(data_set: str):
 
 model = TransformerLanguageModel()
 
+losses = []
+
 # 论文中使用的optimizer是Adam, 关于Adam\AdamW可以看论文: https://arxiv.org/pdf/1711.05101
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
 for step in range(max_iters):
@@ -291,6 +293,18 @@ for step in range(max_iters):
     loss.backward()
     # 让优化器根据 param.grad 的值更新参数
     optimizer.step()
+
+    losses.append(loss.item())  # 记录 loss
+
+    if step % 100 == 0:
+        print(f"Step {step}: Loss = {loss.item():.4f}")
+
+# 绘制 loss 变化曲线
+plt.plot(losses)
+plt.xlabel("Iteration")
+plt.ylabel("Loss")
+plt.title("Training Loss Over Time")
+plt.show()
 
 torch.save(model.state_dict(), "model.pt")
 
