@@ -213,10 +213,10 @@ class TransformerLanguageModel(nn.Module):
         # 2.1 [batch_size, idx_length, d_model] + [idx_length, d_model]在torch中是可以相加的，结果的维度还是[batch_size, idx_length, d_model]
         x = embedding_input + position_encoding_lookup_table
 
-        # 3. 经过transformer_blocks
+        # 3. 经过transformer_blocks ==> [batch_size, idx_length, d_model]
         x = self.transformer_blocks(x)
 
-        # 4. 经过最后的线性层, logits ==> [batch_size, idx_length, vocab_size]
+        # 4. 经过最后的线性层, logits [batch_size, idx_length, d_model] @ [batch_size, d_model, vocab_size] = [batch_size, idx_length, vocab_size]
         logits = self.final_linear(x)
 
         # 判断如果targets不为空，那么我们需要计算出loss
