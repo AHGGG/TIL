@@ -1,4 +1,4 @@
-# Tried several tools, this one works:
+# How to bypass claude code login:
 ## patch cli.js
 ### Step 1: Download tool
 https://www.npmjs.com/package/obfuscator-io-deobfuscator

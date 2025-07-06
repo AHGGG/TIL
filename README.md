@@ -5,6 +5,7 @@
 - [TIL](#til)
     - [Blog](#blog)
     - [LLM](#llm)
+      - [agent](#agent)
       - [原理](#原理)
       - [text-to-sql](#text-to-sql)
       - [prompt](#prompt)
@@ -25,6 +26,9 @@
 - [待整理: openv0 | agent](LLM/openv0.md)
 - [待看: https://github.com/gabrielchua/open-notebooklm](LLM/open-notebooklm.md)
 - [待看: https://github.com/meta-llama/llama-recipes/tree/main/recipes/quickstart/NotebookLlama](LLM/NotebookLlama.md)
+
+#### agent
+- [how to bypass claude code login](LLM/agent/how-to-bypass-claude-code-login.md)
 
 #### 原理
 - [QKV初步理解](LLM/human-to-hero/QKV初步理解.md)
