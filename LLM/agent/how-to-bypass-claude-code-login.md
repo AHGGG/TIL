@@ -1,4 +1,7 @@
-# How to bypass claude code login:
+# prerequisites:
+claude-code@1.0.43
+
+# 1. How to bypass claude code login:
 ## patch cli.js
 ### Step 1: Download tool
 https://www.npmjs.com/package/obfuscator-io-deobfuscator

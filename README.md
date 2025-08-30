@@ -5,6 +5,7 @@
 - [TIL](#til)
     - [Blog](#blog)
     - [LLM](#llm)
+      - [vibe-coding](#vibe-coding)
       - [agent](#agent)
       - [原理](#原理)
       - [text-to-sql](#text-to-sql)
@@ -26,6 +27,9 @@
 - [待整理: openv0 | agent](LLM/openv0.md)
 - [待看: https://github.com/gabrielchua/open-notebooklm](LLM/open-notebooklm.md)
 - [待看: https://github.com/meta-llama/llama-recipes/tree/main/recipes/quickstart/NotebookLlama](LLM/NotebookLlama.md)
+
+#### vibe-coding
+- [单词哥-英语理解力训练应用](LLM/vibe-coding/vibe-english-understanding.md)
 
 #### agent
 - [how to bypass claude code login](LLM/agent/how-to-bypass-claude-code-login.md)
