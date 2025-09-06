@@ -50,6 +50,7 @@
 
 ### linux
 - [SyncClipboard折腾](linux/SyncClipboard折腾.md)
+- [Fix-Ubuntu-Upgrade-From-22-to-24](linux/Fix-Ubuntu-Upgrade-From-22-to-24.md)
 
 ### python
 - [uv | tool](python/uv.md)
